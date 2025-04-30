@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Play, Square, Users } from 'lucide-react';
 import { formatFullTime } from '@/utils/timeUtils';
 import { PersonCount } from '@/types/securityTypes';
+import { useToast } from '@/hooks/use-toast';
 
 interface PeopleCounterProps {
   onSessionComplete: (session: PersonCount) => void;
@@ -13,11 +14,17 @@ const PeopleCounter: React.FC<PeopleCounterProps> = ({ onSessionComplete }) => {
   const [isCounting, setIsCounting] = useState(false);
   const [count, setCount] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const { toast } = useToast();
 
   const handleBeginCounting = () => {
     setIsCounting(true);
     setCount(0);
     setSessionStartTime(new Date());
+    
+    toast({
+      title: "計數開始",
+      description: `開始時間: ${formatFullTime(new Date())}`,
+    });
   };
 
   const handleFinishCounting = () => {
@@ -39,12 +46,25 @@ const PeopleCounter: React.FC<PeopleCounterProps> = ({ onSessionComplete }) => {
     };
     
     onSessionComplete(session);
+    
+    toast({
+      title: "計數完成",
+      description: `共計數到 ${count} 人`,
+      variant: "default",
+    });
   };
 
   // Simulate counting (in a real system this would be triggered by actual detections)
   const handleSimulateDetection = () => {
     if (isCounting) {
       setCount(prev => prev + 1);
+      
+      // Provide subtle feedback when a new person is detected
+      toast({
+        title: "檢測到人員",
+        description: `目前計數: ${count + 1}`,
+        duration: 2000,
+      });
     }
   };
 
