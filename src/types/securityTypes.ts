@@ -7,3 +7,11 @@ export interface SecurityEvent {
   location: string;
   description: string;
 }
+
+export interface PersonCount {
+  id: string;
+  timestamp: Date;
+  count: number;
+  images: string[];
+  location: string;
+}
