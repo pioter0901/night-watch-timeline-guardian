@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Play, Stop, Users } from 'lucide-react';
+import { Play, Square, Users } from 'lucide-react';
 import { formatFullTime } from '@/utils/timeUtils';
 import { PersonCount } from '@/types/securityTypes';
 
@@ -14,13 +14,13 @@ const PeopleCounter: React.FC<PeopleCounterProps> = ({ onSessionComplete }) => {
   const [count, setCount] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
 
-  const handleStartCounting = () => {
+  const handleBeginCounting = () => {
     setIsCounting(true);
     setCount(0);
     setSessionStartTime(new Date());
   };
 
-  const handleStopCounting = () => {
+  const handleFinishCounting = () => {
     if (!isCounting || !sessionStartTime) return;
     
     setIsCounting(false);
@@ -78,7 +78,7 @@ const PeopleCounter: React.FC<PeopleCounterProps> = ({ onSessionComplete }) => {
             className="flex-1"
             variant={isCounting ? "outline" : "default"}
             disabled={isCounting}
-            onClick={handleStartCounting}
+            onClick={handleBeginCounting}
           >
             <Play className="mr-2" /> 開始計數
           </Button>
@@ -87,9 +87,9 @@ const PeopleCounter: React.FC<PeopleCounterProps> = ({ onSessionComplete }) => {
             className="flex-1"
             variant={!isCounting ? "outline" : "destructive"}
             disabled={!isCounting}
-            onClick={handleStopCounting}
+            onClick={handleFinishCounting}
           >
-            <Stop className="mr-2" /> 結束計數
+            <Square className="mr-2" /> 結束計數
           </Button>
         </div>
         
