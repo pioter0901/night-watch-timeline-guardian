@@ -2,6 +2,8 @@
 import React from 'react';
 import { SecurityEvent } from '@/types/securityTypes';
 import { formatFullTime } from '@/utils/timeUtils';
+import { AlertTriangle, CheckCircle, Clock, MapPin, Tag } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface EventDetailProps {
   event: SecurityEvent | null;
@@ -19,12 +21,68 @@ const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
     );
   }
 
+  const getSeverityColor = (severity: SecurityEvent['severity']) => {
+    switch (severity) {
+      case 'critical':
+        return 'text-red-400 bg-red-400/20';
+      case 'high':
+        return 'text-orange-400 bg-orange-400/20';
+      case 'medium':
+        return 'text-yellow-400 bg-yellow-400/20';
+      case 'low':
+        return 'text-green-400 bg-green-400/20';
+    }
+  };
+
+  const getSeverityText = (severity: SecurityEvent['severity']) => {
+    switch (severity) {
+      case 'critical':
+        return '緊急';
+      case 'high':
+        return '高';
+      case 'medium':
+        return '中';
+      case 'low':
+        return '低';
+    }
+  };
+
+  const getEventTypeText = (eventType: SecurityEvent['eventType']) => {
+    switch (eventType) {
+      case 'motion':
+        return '動作偵測';
+      case 'intrusion':
+        return '入侵偵測';
+      case 'noise':
+        return '聲音偵測';
+      case 'fire':
+        return '火災警報';
+      case 'door':
+        return '門禁感應';
+      case 'window':
+        return '窗戶感應';
+      case 'system':
+        return '系統事件';
+      default:
+        return '未知事件';
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="border-b border-security-muted/30 mb-3 pb-2">
-        <h2 className="text-xl font-semibold text-white">
-          {event.isAnomaly ? '異常事件' : '正常事件'}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">
+            {event.isAnomaly ? '異常事件' : '正常事件'}
+          </h2>
+          <div className="flex items-center space-x-2">
+            {event.resolved ? (
+              <CheckCircle className="h-5 w-5 text-green-400" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 text-security-anomaly" />
+            )}
+          </div>
+        </div>
         <p className="text-sm text-security-muted">{event.location}</p>
       </div>
 
@@ -37,7 +95,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
               <div className="absolute inset-0 flex items-center justify-center">
                 {event.isAnomaly ? (
                   <div className="animate-pulse text-security-anomaly font-bold">
-                    檢測到異常活動
+                    {getEventTypeText(event.eventType)}
                   </div>
                 ) : (
                   <div className="text-security-muted text-sm">
@@ -55,30 +113,56 @@ const EventDetail: React.FC<EventDetailProps> = ({ event }) => {
             {event.description}
           </h3>
           
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-security-muted">位置:</span>
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-security-muted" />
+                <span className="text-security-muted">位置:</span>
+              </div>
               <span>{event.location}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-security-muted">時間:</span>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-security-muted" />
+                <span className="text-security-muted">時間:</span>
+              </div>
               <span>{formatFullTime(event.timestamp)}</span>
             </div>
-            <div className="flex justify-between">
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Tag className="h-4 w-4 mr-2 text-security-muted" />
+                <span className="text-security-muted">類型:</span>
+              </div>
+              <span>{getEventTypeText(event.eventType)}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-security-muted">嚴重程度:</span>
+              <span className={`px-2 py-1 rounded text-xs ${getSeverityColor(event.severity)}`}>
+                {getSeverityText(event.severity)}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
               <span className="text-security-muted">狀態:</span>
-              <span className={event.isAnomaly ? "text-security-anomaly" : "text-green-400"}>
-                {event.isAnomaly ? '異常' : '正常'}
+              <span className={event.resolved ? "text-green-400" : "text-security-anomaly"}>
+                {event.resolved ? '已處理' : '待處理'}
               </span>
             </div>
           </div>
           
-          {event.isAnomaly && (
-            <div className="mt-6">
-              <button className="w-full bg-security-anomaly text-white py-2 rounded-md font-medium">
-                通報此事件
-              </button>
-            </div>
-          )}
+          <div className="mt-6 space-y-2">
+            {event.isAnomaly && !event.resolved && (
+              <Button className="w-full bg-security-anomaly text-white hover:bg-security-anomaly/80">
+                立即處理事件
+              </Button>
+            )}
+            <Button variant="outline" className="w-full">
+              查看完整報告
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -6,22 +6,30 @@ import EventDetail from './EventDetail';
 import PeopleCounter from './PeopleCounter';
 import PeopleCountHistory from './PeopleCountHistory';
 import PeopleCountDetail from './PeopleCountDetail';
-import { SecurityEvent, PersonCount } from '@/types/securityTypes';
-import { generateSecurityEvents, cameraFeeds } from '@/data/securityData';
-import { Clock } from "lucide-react";
+import SystemStatus from './SystemStatus';
+import SecurityAlerts from './SecurityAlerts';
+import { SecurityEvent, PersonCount, SecurityAlert, SystemStatus as SystemStatusType } from '@/types/securityTypes';
+import { generateSecurityEvents, generateSecurityAlerts, getSystemStatus, cameraFeeds } from '@/data/securityData';
+import { Clock, Shield, AlertTriangle, Activity } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
 
 const SecurityDashboard: React.FC = () => {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<SecurityEvent | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [mode, setMode] = useState<'security' | 'counting'>('security');
+  const [securityView, setSecurityView] = useState<'monitoring' | 'alerts' | 'status'>('monitoring');
   const [countSessions, setCountSessions] = useState<PersonCount[]>([]);
   const [selectedSession, setSelectedSession] = useState<PersonCount | null>(null);
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
+  const [systemStatus, setSystemStatus] = useState<SystemStatusType>(getSystemStatus());
+  const { toast } = useToast();
   
   // Initialize events data
   useEffect(() => {
     const securityEvents = generateSecurityEvents();
     setEvents(securityEvents);
+    setAlerts(generateSecurityAlerts());
     
     // Initialize with latest event
     if (securityEvents.length > 0) {
@@ -59,12 +67,27 @@ const SecurityDashboard: React.FC = () => {
     setSelectedSession(session);
   };
 
+  const handleAcknowledgeAlert = (alertId: string) => {
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId 
+        ? { ...alert, acknowledged: true }
+        : alert
+    ));
+    
+    toast({
+      title: "警報已確認",
+      description: "警報已標記為已處理",
+    });
+  };
+
+  const unacknowledgedAlertsCount = alerts.filter(alert => !alert.acknowledged).length;
+
   return (
     <div className="h-screen w-screen bg-security-bg text-white">
       {/* Header */}
       <header className="h-14 border-b border-security-muted/20 flex items-center justify-between px-4">
         <div className="flex items-center">
-          <h1 className="text-xl font-bold">夜間保全系統</h1>
+          <h1 className="text-xl font-bold">智慧保全系統</h1>
           
           <div className="ml-6 flex space-x-4">
             <button 
@@ -80,6 +103,37 @@ const SecurityDashboard: React.FC = () => {
               日間人員計數
             </button>
           </div>
+
+          {mode === 'security' && (
+            <div className="ml-6 flex space-x-2">
+              <button 
+                className={`px-2 py-1 rounded text-xs ${securityView === 'monitoring' ? 'bg-blue-500 text-white' : 'text-security-muted hover:text-white'}`}
+                onClick={() => setSecurityView('monitoring')}
+              >
+                <Activity className="h-3 w-3 inline mr-1" />
+                監控
+              </button>
+              <button 
+                className={`px-2 py-1 rounded text-xs relative ${securityView === 'alerts' ? 'bg-red-500 text-white' : 'text-security-muted hover:text-white'}`}
+                onClick={() => setSecurityView('alerts')}
+              >
+                <AlertTriangle className="h-3 w-3 inline mr-1" />
+                警報
+                {unacknowledgedAlertsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {unacknowledgedAlertsCount}
+                  </span>
+                )}
+              </button>
+              <button 
+                className={`px-2 py-1 rounded text-xs ${securityView === 'status' ? 'bg-green-500 text-white' : 'text-security-muted hover:text-white'}`}
+                onClick={() => setSecurityView('status')}
+              >
+                <Shield className="h-3 w-3 inline mr-1" />
+                狀態
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center">
           <Clock className="h-4 w-4 mr-2" />
@@ -112,13 +166,24 @@ const SecurityDashboard: React.FC = () => {
               </div>
             </div>
             
-            {/* Middle panel - Timeline */}
+            {/* Middle panel - Timeline/Alerts/Status */}
             <div className="w-full md:w-1/3 border-r border-security-muted/20 p-4">
-              <Timeline 
-                events={events}
-                selectedEvent={selectedEvent}
-                onSelectEvent={handleSelectEvent}
-              />
+              {securityView === 'monitoring' && (
+                <Timeline 
+                  events={events}
+                  selectedEvent={selectedEvent}
+                  onSelectEvent={handleSelectEvent}
+                />
+              )}
+              {securityView === 'alerts' && (
+                <SecurityAlerts 
+                  alerts={alerts}
+                  onAcknowledge={handleAcknowledgeAlert}
+                />
+              )}
+              {securityView === 'status' && (
+                <SystemStatus status={systemStatus} />
+              )}
             </div>
             
             {/* Right panel - Event details */}
@@ -133,7 +198,6 @@ const SecurityDashboard: React.FC = () => {
               <PeopleCounter onSessionComplete={handleCountingSessionComplete} />
             </div>
             
-            {/* Middle panel - Count History */}
             <div className="w-full md:w-1/3 border-r border-security-muted/20 p-4">
               <div className="border-b border-security-muted/30 mb-3 pb-2">
                 <h2 className="text-xl font-semibold">計數歷史紀錄</h2>
@@ -150,7 +214,6 @@ const SecurityDashboard: React.FC = () => {
               </div>
             </div>
             
-            {/* Right panel - Count details */}
             <div className="w-full md:w-1/3 p-4">
               <PeopleCountDetail session={selectedSession} />
             </div>
